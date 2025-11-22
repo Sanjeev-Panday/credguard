@@ -4,12 +4,6 @@ import java.util.List;
 
 /**
  * Represents the result of verifying a credential.
- * <p>
- * This record captures the details about the credential verification process, including flags for various checks (validity, trust, signature, expiry),
- * associated errors and warnings, an optional explanation, and the credential itself.
- * <p>
- * Use the {@link #success} and {@link #failure} static factory methods for convenient creation of results.
- *
  * @param valid          true if all verification checks passed
  * @param issuerTrusted  true if the issuer is trusted in current context
  * @param signatureValid true if the credential's signature is valid
