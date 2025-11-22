@@ -2,6 +2,7 @@ package com.credguard.application;
 
 import com.credguard.domain.Credential;
 import com.credguard.domain.VerificationResult;
+import com.credguard.infra.crypto.SignatureVerificationService;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -16,12 +17,23 @@ import org.springframework.stereotype.Service;
  * <ul>
  *   <li>Issuer trust validation - checks if the issuer is trusted</li>
  *   <li>Expiry validation - checks if the credential has expired</li>
- *   <li>Signature validation - checks if the credential signature is valid (stub implementation)</li>
+ *   <li>Signature validation - checks if the credential signature is valid using Nimbus JOSE</li>
  * </ul>
  * All checks are combined into a single VerificationResult.
  */
 @Service
 public class VerificationService {
+
+    private final SignatureVerificationService signatureVerificationService;
+
+    /**
+     * Constructor for dependency injection.
+     *
+     * @param signatureVerificationService the signature verification service
+     */
+    public VerificationService(SignatureVerificationService signatureVerificationService) {
+        this.signatureVerificationService = signatureVerificationService;
+    }
 
     /**
      * Verifies a credential by performing all validation checks.
@@ -101,16 +113,40 @@ public class VerificationService {
     /**
      * Validates the credential signature.
      * <p>
-     * This is currently a stub implementation that always returns true.
-     * Future implementation will use Nimbus JOSE for JWT/JWS signature verification.
+     * Uses Nimbus JOSE to verify JWT/JWS signatures. If the credential
+     * contains JWT data in its claims, it will be verified. Otherwise,
+     * signature verification is considered not applicable.
      *
      * @param credential the credential to check
-     * @return true if the signature is valid (stub: always true)
+     * @return true if the signature is valid or verification is not applicable
      */
     private boolean validateSignature(Credential credential) {
-        // TODO: Implement actual signature verification using Nimbus JOSE
-        // For now, return true as a stub
-        return true;
+        // Try to get issuer's public key URL from claims or issuer metadata
+        String issuerPublicKeyUrl = extractPublicKeyUrl(credential);
+        
+        // Verify signature using the signature verification service
+        return signatureVerificationService.verifyCredentialSignature(
+            credential.claims(),
+            issuerPublicKeyUrl
+        );
+    }
+    
+    /**
+     * Extracts the issuer's public key URL from credential claims or issuer metadata.
+     *
+     * @param credential the credential
+     * @return public key URL if found, null otherwise
+     */
+    private String extractPublicKeyUrl(Credential credential) {
+        // Check claims for public key URL
+        Object jwkUrl = credential.claims().get("issuerPublicKeyUrl");
+        if (jwkUrl instanceof String) {
+            return (String) jwkUrl;
+        }
+        
+        // Could also construct from issuer ID if it's a DID
+        // For now, return null and let the service handle it gracefully
+        return null;
     }
     
     /**

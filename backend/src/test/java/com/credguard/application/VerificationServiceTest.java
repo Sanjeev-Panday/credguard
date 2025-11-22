@@ -3,25 +3,41 @@ package com.credguard.application;
 import com.credguard.domain.Credential;
 import com.credguard.domain.Issuer;
 import com.credguard.domain.VerificationResult;
+import com.credguard.infra.crypto.SignatureVerificationService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 
 /**
  * Unit tests for VerificationService.
  */
+@ExtendWith(MockitoExtension.class)
 class VerificationServiceTest {
+
+    @Mock
+    private SignatureVerificationService signatureVerificationService;
 
     private VerificationService verificationService;
 
     @BeforeEach
     void setUp() {
-        verificationService = new VerificationService();
+        verificationService = new VerificationService(signatureVerificationService);
+        // Default: signature verification returns true (valid signature)
+        // Use lenient() to allow different argument combinations
+        lenient()
+            .when(signatureVerificationService.verifyCredentialSignature(any(), any()))
+            .thenReturn(true);
     }
 
     @Test

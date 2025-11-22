@@ -2,6 +2,8 @@
 
 AI-Powered Digital Credential Verification System
 
+![CredGuard UI](docs/screenshot.png)
+
 ## Overview
 
 CredGuard is a digital credential verification system that demonstrates:
@@ -26,7 +28,7 @@ The backend follows clean architecture with clear layer separation:
 1. **Verification Pipeline**
    - Issuer trust validation
    - Expiry validation
-   - Signature validation (stub implementation)
+   - Signature validation with Nimbus JOSE (JWT/JWS verification)
    - Combined verification results
 
 2. **REST API Endpoints**
@@ -49,12 +51,25 @@ The backend follows clean architecture with clear layer separation:
    - Unit tests for VerificationService
    - Comprehensive test coverage
 
+6. **Frontend (Next.js + Tailwind)**
+   - Modern React-based UI with TypeScript
+   - Drag-and-drop file upload
+   - Real-time verification results display
+   - JSON viewer for credential details
+   - Dark mode support
+   - Responsive design
+
 ## Getting Started
 
 ### Prerequisites
 
+**Backend:**
 - Java 21+
 - Maven 3.6+
+
+**Frontend:**
+- Node.js 18+
+- npm or yarn
 
 ### Configuration
 
@@ -75,7 +90,7 @@ ai.openai.api-key=your-api-key
 ai.mock-mode=false
 ```
 
-### Running the Application
+### Running the Backend
 
 ```bash
 cd backend
@@ -83,6 +98,18 @@ mvn spring-boot:run
 ```
 
 The API will be available at `http://localhost:8080`
+
+### Running the Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend will be available at `http://localhost:3000`
+
+**Note:** Make sure the backend is running before starting the frontend, or update `NEXT_PUBLIC_API_URL` in `.env.local` to point to your backend URL.
 
 ### Testing
 
@@ -125,26 +152,45 @@ curl -X POST http://localhost:8080/api/credentials/upload \
 ## Project Structure
 
 ```
-backend/
-├── src/main/java/com/credguard/
-│   ├── domain/              # Domain models
-│   ├── application/         # Business logic
-│   │   └── ai/              # AI extraction service
-│   ├── web/                 # REST controllers
-│   │   └── dto/             # Data transfer objects
-│   └── infra/               # Infrastructure
-│       └── ai/              # AI client implementations
-└── src/test/                # Tests
+credguard/
+├── backend/
+│   ├── src/main/java/com/credguard/
+│   │   ├── domain/              # Domain models
+│   │   ├── application/         # Business logic
+│   │   │   └── ai/              # AI extraction service
+│   │   ├── web/                 # REST controllers
+│   │   │   └── dto/             # Data transfer objects
+│   │   └── infra/               # Infrastructure
+│   │       ├── ai/              # AI client implementations
+│   │       └── crypto/          # Signature verification (Nimbus JOSE)
+│   └── src/test/                # Tests
+└── frontend/
+    ├── app/                     # Next.js App Router pages
+    ├── components/              # React components
+    │   ├── FileUpload.tsx       # Drag-and-drop upload
+    │   ├── VerificationResult.tsx
+    │   └── CredentialViewer.tsx # JSON/formatted viewer
+    └── lib/api/                 # API client
 ```
+
+## Features Implemented
+
+✅ **Complete Verification Pipeline** - Issuer trust, expiry, and signature validation  
+✅ **AI Extraction Service** - OpenAI Vision API integration with mock mode  
+✅ **REST API** - Full CRUD operations for credential verification  
+✅ **Frontend UI** - Modern Next.js application with drag-and-drop upload  
+✅ **Signature Verification** - Nimbus JOSE integration for JWT/JWS verification  
+✅ **Error Handling** - Comprehensive error handling and validation  
+✅ **Testing** - Unit tests for core services  
 
 ## Next Steps
 
-- [ ] Implement full signature verification with Nimbus JOSE
-- [ ] Add frontend (Next.js + Tailwind)
 - [ ] Add blockchain anchoring
-- [ ] AWS/cloud deployment
+- [ ] AWS/cloud deployment (Terraform/CDK)
 - [ ] Enhanced AI extraction with better prompts
 - [ ] Support for multiple AI providers
+- [ ] Credential storage and history
+- [ ] User authentication and authorization
 
 ## License
 
