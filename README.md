@@ -3,7 +3,6 @@
 AI-Powered Digital Credential Verification System
 
 ![CredGuard UI](docs/screenshot.png)
-
 ## Overview
 
 CredGuard is a digital credential verification system that demonstrates:
