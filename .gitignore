@@ -136,3 +136,4 @@ docker-compose.override.yml
 *.rar
 .vscode-test/
 .history/
+.custom-instruction.md
