@@ -1,68 +1,45 @@
 package com.credguard.application.ai;
 
 import com.credguard.domain.Credential;
+import com.credguard.exception.CredentialExtractionException;
 import com.credguard.infra.ai.AIVisionClient;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
- * Service responsible for extracting credential information from files using AI.
- * <p>
- * This service acts as a bridge between the application layer and the infrastructure
- * layer, handling credential extraction from various file formats (PDF, images, etc.)
- * using AI vision capabilities.
+ * Service for extracting credential information from files using AI.
  */
 @Service
 public class CredentialExtractionService {
-
+    
+    private static final Logger logger = LoggerFactory.getLogger(CredentialExtractionService.class);
     private final AIVisionClient aiVisionClient;
 
-    /**
-     * Constructor for dependency injection.
-     *
-     * @param aiVisionClient the AI vision client
-     */
     public CredentialExtractionService(AIVisionClient aiVisionClient) {
         this.aiVisionClient = aiVisionClient;
     }
 
-    /**
-     * Extracts a credential from raw file bytes.
-     *
-     * @param fileBytes the raw file bytes
-     * @param fileName the name of the file (for format detection)
-     * @return extracted Credential object
-     * @throws CredentialExtractionException if extraction fails
-     */
-    public Credential extractCredential(byte[] fileBytes, String fileName) throws CredentialExtractionException {
+    public Credential extractCredential(byte[] fileBytes, String fileName) {
+        logger.info("Extracting credential from file: {}", fileName);
+        
         if (fileBytes == null || fileBytes.length == 0) {
+            logger.error("File bytes are null or empty");
             throw new CredentialExtractionException("File bytes cannot be null or empty");
         }
         
-        if (fileName == null || fileName.isBlank()) {
-            fileName = "unknown";
-        }
+        String normalizedFileName = (fileName == null || fileName.isBlank()) ? "unknown" : fileName;
         
         try {
-            return aiVisionClient.extractCredential(fileBytes, fileName);
-        } catch (AIVisionClient.CredentialExtractionException e) {
+            Credential credential = aiVisionClient.extractCredential(fileBytes, normalizedFileName);
+            logger.info("Successfully extracted credential: {}", credential.id());
+            return credential;
+        } catch (Exception e) {
+            logger.error("Failed to extract credential from file: {}", normalizedFileName, e);
             throw new CredentialExtractionException(
                 "Failed to extract credential: " + e.getMessage(),
                 e
             );
-        }
-    }
-    
-    /**
-     * Exception thrown when credential extraction fails.
-     */
-    public static class CredentialExtractionException extends Exception {
-        public CredentialExtractionException(String message) {
-            super(message);
-        }
-        
-        public CredentialExtractionException(String message, Throwable cause) {
-            super(message, cause);
         }
     }
 }

@@ -9,11 +9,6 @@ import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.Map;
 
-/**
- * DTO for credential verification requests.
- * <p>
- * This DTO mirrors the Credential domain model structure for JSON deserialization.
- */
 public record VerificationRequest(
         @NotBlank(message = "id must not be blank")
         String id,
@@ -29,18 +24,13 @@ public record VerificationRequest(
         String subject,
         
         @NotNull(message = "issuedAt must not be null")
-        String issuedAt, // ISO-8601 string
+        String issuedAt,
         
-        String expiresAt, // ISO-8601 string, nullable
+        String expiresAt,
         
         @NotNull(message = "claims must not be null")
         Map<String, Object> claims
 ) {
-    /**
-     * Converts this DTO to a domain Credential object.
-     *
-     * @return Credential domain object
-     */
     public Credential toCredential() {
         return new Credential(
             id,
@@ -53,9 +43,6 @@ public record VerificationRequest(
         );
     }
     
-    /**
-     * Nested DTO for issuer information.
-     */
     public record IssuerRequest(
             @NotBlank(message = "id must not be blank")
             String id,

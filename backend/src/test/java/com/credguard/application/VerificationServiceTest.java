@@ -1,10 +1,12 @@
 package com.credguard.application;
 
+import com.credguard.application.validation.ExpiryValidator;
+import com.credguard.application.validation.IssuerTrustValidator;
+import com.credguard.application.validation.SignatureValidator;
 import com.credguard.domain.Credential;
 import com.credguard.domain.Issuer;
 import com.credguard.domain.VerificationResult;
 import com.credguard.infra.crypto.SignatureVerificationService;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,16 +14,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 
-/**
- * Unit tests for VerificationService.
- */
 @ExtendWith(MockitoExtension.class)
 class VerificationServiceTest {
 
@@ -32,12 +31,17 @@ class VerificationServiceTest {
 
     @BeforeEach
     void setUp() {
-        verificationService = new VerificationService(signatureVerificationService);
-        // Default: signature verification returns true (valid signature)
-        // Use lenient() to allow different argument combinations
         lenient()
             .when(signatureVerificationService.verifyCredentialSignature(any(), any()))
             .thenReturn(true);
+        
+        IssuerTrustValidator issuerTrustValidator = new IssuerTrustValidator();
+        ExpiryValidator expiryValidator = new ExpiryValidator();
+        SignatureValidator signatureValidator = new SignatureValidator(signatureVerificationService);
+        
+        verificationService = new VerificationService(
+            List.of(issuerTrustValidator, expiryValidator, signatureValidator)
+        );
     }
 
     @Test

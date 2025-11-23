@@ -2,27 +2,22 @@ package com.credguard.web;
 
 import com.credguard.application.VerificationService;
 import com.credguard.application.ai.CredentialExtractionService;
+import com.credguard.exception.CredentialExtractionException;
+import com.credguard.exception.FileProcessingException;
 import com.credguard.web.dto.VerificationRequest;
 import com.credguard.web.dto.VerificationResponse;
-
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 /**
  * REST controller for credential verification operations.
- * <p>
- * This controller handles HTTP requests related to credential verification.
- * It delegates business logic to the application layer services.
  */
 @RestController
 @RequestMapping("/api/credentials")
@@ -30,16 +25,9 @@ import org.springframework.web.multipart.MultipartFile;
 public class CredentialController {
 
     private static final Logger logger = LoggerFactory.getLogger(CredentialController.class);
-
     private final VerificationService verificationService;
     private final CredentialExtractionService extractionService;
 
-    /**
-     * Constructor for dependency injection.
-     *
-     * @param verificationService the verification service
-     * @param extractionService the credential extraction service
-     */
     public CredentialController(
             VerificationService verificationService,
             CredentialExtractionService extractionService
@@ -48,41 +36,33 @@ public class CredentialController {
         this.extractionService = extractionService;
     }
 
-    /**
-     * Verifies a credential.
-     * <p>
-     * Accepts a credential in JSON format and returns the verification result.
-     *
-     * @param request the verification request containing the credential
-     * @return verification response with the result
-     */
     @PostMapping("/verify")
     public ResponseEntity<VerificationResponse> verify(
             @Valid @RequestBody VerificationRequest request
     ) {
+        logger.info("Received verification request for credential: {}", request.id());
+        
         var credential = request.toCredential();
         var result = verificationService.verify(credential);
         var response = VerificationResponse.from(result);
 
         HttpStatus status = result.valid() ? HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        logger.info("Verification completed for credential {}: valid={}", 
+            request.id(), result.valid());
+        
         return ResponseEntity.status(status).body(response);
     }
+    
     @PostMapping("/upload")
     public ResponseEntity<VerificationResponse> uploadAndVerify(
             @RequestParam("file") MultipartFile file
     ) {
-        if (file == null || file.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new VerificationResponse(
-                    false,
-                    false,
-                    false,
-                    false,
-                    java.util.List.of("File is required and cannot be empty"),
-                    java.util.List.of(),
-                    "No file provided",
-                    null
-                ));
+        logger.info("Received file upload: {}, size: {} bytes", 
+            file.getOriginalFilename(), file.getSize());
+        
+        if (file.isEmpty()) {
+            logger.warn("Empty file uploaded");
+            throw new FileProcessingException("File is required and cannot be empty");
         }
 
         try {
@@ -92,35 +72,18 @@ public class CredentialController {
             var response = VerificationResponse.from(result);
             
             HttpStatus status = result.valid() ? HttpStatus.OK : HttpStatus.BAD_REQUEST;
+            logger.info("Upload and verification completed for file {}: valid={}", 
+                file.getOriginalFilename(), result.valid());
+            
             return ResponseEntity.status(status).body(response);
             
-        } catch (CredentialExtractionService.CredentialExtractionException e) {
-            logger.error("Credential extraction failed for file={}", file.getOriginalFilename(), e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new VerificationResponse(
-                    false,
-                    false,
-                    false,
-                    false,
-                    java.util.List.of("Failed to extract credential: " + e.getMessage()),
-                    java.util.List.of(),
-                    "Credential extraction failed",
-                    null
-                ));
+        } catch (CredentialExtractionException e) {
+            logger.error("Credential extraction failed for file: {}", file.getOriginalFilename(), e);
+            throw e;
         } catch (Exception e) {
-            logger.error("Unexpected error processing upload for file={}",
-                    file == null ? "<null>" : file.getOriginalFilename(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new VerificationResponse(
-                    false,
-                    false,
-                    false,
-                    false,
-                    java.util.List.of("Internal server error: " + e.getMessage()),
-                    java.util.List.of(),
-                    "An unexpected error occurred",
-                    null
-                ));
+            logger.error("Unexpected error processing upload for file: {}", 
+                file.getOriginalFilename(), e);
+            throw new FileProcessingException("Failed to process uploaded file", e);
         }
     }
 }
