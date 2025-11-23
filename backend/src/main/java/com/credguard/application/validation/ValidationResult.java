@@ -5,14 +5,21 @@ package com.credguard.application.validation;
  */
 public record ValidationResult(
     boolean valid,
-    String errorMessage
+    String errorMessage,
+    ValidationType validationType
 ) {
     
-    public static ValidationResult success() {
-        return new ValidationResult(true, null);
+    public static ValidationResult success(ValidationType type) {
+        return new ValidationResult(true, null, type);
     }
     
-    public static ValidationResult failure(String errorMessage) {
-        return new ValidationResult(false, errorMessage);
+    public static ValidationResult failure(String errorMessage, ValidationType type) {
+        return new ValidationResult(false, errorMessage, type);
+    }
+    
+    public enum ValidationType {
+        ISSUER_TRUST,
+        EXPIRY,
+        SIGNATURE
     }
 }

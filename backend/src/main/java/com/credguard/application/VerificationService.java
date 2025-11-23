@@ -43,13 +43,10 @@ public class VerificationService {
                 logger.debug("Validator {} failed for credential {}", 
                     validator.getValidatorName(), credential.id());
                 
-                String validatorName = validator.getValidatorName();
-                if (validatorName.contains("IssuerTrust")) {
-                    issuerTrusted = false;
-                } else if (validatorName.contains("Expiry")) {
-                    notExpired = false;
-                } else if (validatorName.contains("Signature")) {
-                    signatureValid = false;
+                switch (result.validationType()) {
+                    case ISSUER_TRUST -> issuerTrusted = false;
+                    case EXPIRY -> notExpired = false;
+                    case SIGNATURE -> signatureValid = false;
                 }
             }
         }

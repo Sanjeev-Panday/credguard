@@ -22,10 +22,10 @@ public class IssuerTrustValidator implements CredentialValidator {
                 credential.issuer().displayName());
             logger.warn("Issuer trust validation failed for credential {}: {}", 
                 credential.id(), errorMsg);
-            return ValidationResult.failure(errorMsg);
+            return ValidationResult.failure(errorMsg, ValidationResult.ValidationType.ISSUER_TRUST);
         }
         
-        return ValidationResult.success();
+        return ValidationResult.success(ValidationResult.ValidationType.ISSUER_TRUST);
     }
     
     @Override

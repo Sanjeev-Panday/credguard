@@ -21,17 +21,17 @@ public class ExpiryValidator implements CredentialValidator {
         
         if (credential.expiresAt() == null) {
             logger.debug("Credential {} has no expiration date (perpetual)", credential.id());
-            return ValidationResult.success();
+            return ValidationResult.success(ValidationResult.ValidationType.EXPIRY);
         }
         
         if (credential.expiresAt().isBefore(Instant.now())) {
             String errorMsg = "Credential has expired";
             logger.warn("Expiry validation failed for credential {}: expired at {}", 
                 credential.id(), credential.expiresAt());
-            return ValidationResult.failure(errorMsg);
+            return ValidationResult.failure(errorMsg, ValidationResult.ValidationType.EXPIRY);
         }
         
-        return ValidationResult.success();
+        return ValidationResult.success(ValidationResult.ValidationType.EXPIRY);
     }
     
     @Override

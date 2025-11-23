@@ -32,10 +32,10 @@ public class SignatureValidator implements CredentialValidator {
         if (!isValid) {
             String errorMsg = "Credential signature is invalid";
             logger.warn("Signature validation failed for credential {}", credential.id());
-            return ValidationResult.failure(errorMsg);
+            return ValidationResult.failure(errorMsg, ValidationResult.ValidationType.SIGNATURE);
         }
         
-        return ValidationResult.success();
+        return ValidationResult.success(ValidationResult.ValidationType.SIGNATURE);
     }
     
     @Override

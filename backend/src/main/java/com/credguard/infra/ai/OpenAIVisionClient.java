@@ -209,9 +209,22 @@ public class OpenAIVisionClient implements AIVisionClient {
             Map<String, Object> claims = new HashMap<>();
             if (json.has("claims") && json.get("claims").isObject()) {
                 JsonNode claimsNode = json.get("claims");
-                claimsNode.fields().forEachRemaining(entry -> 
-                    claims.put(entry.getKey(), entry.getValue().asText())
-                );
+                claimsNode.fields().forEachRemaining(entry -> {
+                    JsonNode valueNode = entry.getValue();
+                    Object value;
+                    if (valueNode.isTextual()) {
+                        value = valueNode.asText();
+                    } else if (valueNode.isNumber()) {
+                        value = valueNode.numberValue();
+                    } else if (valueNode.isBoolean()) {
+                        value = valueNode.asBoolean();
+                    } else if (valueNode.isNull()) {
+                        value = null;
+                    } else {
+                        value = valueNode.toString();
+                    }
+                    claims.put(entry.getKey(), value);
+                });
             }
             
             return new Credential(id, type, issuer, subject, issuedAt, expiresAt, claims);

@@ -19,6 +19,7 @@
     <description>CredGuard Backend Application</description>
     
     <properties>
+        <!-- Java 17 LTS - Consider upgrading to Java 21 LTS for better performance in production -->
         <java.version>17</java.version>
     </properties>
     
