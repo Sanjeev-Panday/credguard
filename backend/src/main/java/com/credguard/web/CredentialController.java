@@ -6,8 +6,11 @@ import com.credguard.web.dto.VerificationRequest;
 import com.credguard.web.dto.VerificationResponse;
 
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,7 +26,10 @@ import org.springframework.web.multipart.MultipartFile;
  */
 @RestController
 @RequestMapping("/api/credentials")
+@CrossOrigin(origins = "http://localhost:3000")
 public class CredentialController {
+
+    private static final Logger logger = LoggerFactory.getLogger(CredentialController.class);
 
     private final VerificationService verificationService;
     private final CredentialExtractionService extractionService;
@@ -57,20 +63,10 @@ public class CredentialController {
         var credential = request.toCredential();
         var result = verificationService.verify(credential);
         var response = VerificationResponse.from(result);
-        
+
         HttpStatus status = result.valid() ? HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return ResponseEntity.status(status).body(response);
     }
-
-    /**
-     * Uploads a file and verifies the extracted credential.
-     * <p>
-     * Accepts a multipart file (PDF, image, etc.), extracts credential information
-     * using AI, and returns the verification result.
-     *
-     * @param file the uploaded file
-     * @return verification response with the result
-     */
     @PostMapping("/upload")
     public ResponseEntity<VerificationResponse> uploadAndVerify(
             @RequestParam("file") MultipartFile file
@@ -99,6 +95,7 @@ public class CredentialController {
             return ResponseEntity.status(status).body(response);
             
         } catch (CredentialExtractionService.CredentialExtractionException e) {
+            logger.error("Credential extraction failed for file={}", file.getOriginalFilename(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new VerificationResponse(
                     false,
@@ -111,6 +108,8 @@ public class CredentialController {
                     null
                 ));
         } catch (Exception e) {
+            logger.error("Unexpected error processing upload for file={}",
+                    file == null ? "<null>" : file.getOriginalFilename(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new VerificationResponse(
                     false,

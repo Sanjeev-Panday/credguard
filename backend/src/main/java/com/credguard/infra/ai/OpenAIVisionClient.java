@@ -5,6 +5,8 @@ import com.credguard.domain.Issuer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -14,11 +16,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+// removed unused/incorrect logger imports in favor of SLF4J
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
-
+// java.util.logging removed; using SLF4J instead
+import java.time.format.DateTimeParseException;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 /**
  * OpenAI Vision API client implementation for extracting credentials from files.
  * <p>
@@ -28,8 +34,10 @@ import java.util.Map;
 @Component
 public class OpenAIVisionClient implements AIVisionClient {
 
+
     private static final String OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
     private static final String MODEL = "gpt-4o";
+    private static final Logger logger = LoggerFactory.getLogger(OpenAIVisionClient.class);
     
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
@@ -82,10 +90,13 @@ public class OpenAIVisionClient implements AIVisionClient {
                 request,
                 String.class
             );
+
+            System.out.println(response.getBody());
             
             return parseResponse(response.getBody());
             
         } catch (Exception e) {
+            logger.error("Failed to extract credential from file", e);
             throw new CredentialExtractionException(
                 "Failed to extract credential from file: " + e.getMessage(),
                 e
@@ -211,11 +222,11 @@ public class OpenAIVisionClient implements AIVisionClient {
         );
         
         String subject = json.get("subject").asText();
-        Instant issuedAt = Instant.parse(json.get("issuedAt").asText());
+        Instant issuedAt = parseDateOrInstant(json.get("issuedAt").asText());
         
         Instant expiresAt = null;
         if (json.has("expiresAt") && !json.get("expiresAt").isNull()) {
-            expiresAt = Instant.parse(json.get("expiresAt").asText());
+            expiresAt = parseDateOrInstant(json.get("expiresAt").asText());
         }
         
         Map<String, Object> claims = new HashMap<>();
@@ -242,6 +253,20 @@ public class OpenAIVisionClient implements AIVisionClient {
             Instant.now().plusSeconds(86400 * 365), // 1 year from now
             Map.of("degree", "Bachelor of Science", "university", "Example University")
         );
+    }
+
+    private Instant parseDateOrInstant(String value) {
+        try {
+            return Instant.parse(value);
+        } catch (DateTimeParseException e) {
+            // Try parsing as LocalDate (yyyy-MM-dd)
+            try {
+                LocalDate date = LocalDate.parse(value);
+                return date.atStartOfDay().toInstant(ZoneOffset.UTC);
+            } catch (DateTimeParseException ex) {
+                throw new IllegalArgumentException("Invalid date/time format: " + value);
+            }
+        }
     }
 }
 
