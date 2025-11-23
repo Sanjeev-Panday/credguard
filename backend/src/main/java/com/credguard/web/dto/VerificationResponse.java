@@ -6,11 +6,6 @@ import com.credguard.domain.VerificationResult;
 import java.util.List;
 import java.util.Map;
 
-/**
- * DTO for credential verification responses.
- * <p>
- * This DTO represents the verification result in a format suitable for JSON serialization.
- */
 public record VerificationResponse(
         boolean valid,
         boolean issuerTrusted,
@@ -21,12 +16,6 @@ public record VerificationResponse(
         String explanation,
         CredentialDto credential
 ) {
-    /**
-     * Creates a VerificationResponse from a VerificationResult domain object.
-     *
-     * @param result the verification result
-     * @return VerificationResponse DTO
-     */
     public static VerificationResponse from(VerificationResult result) {
         CredentialDto credentialDto = result.credential() != null
             ? CredentialDto.from(result.credential())
@@ -44,9 +33,6 @@ public record VerificationResponse(
         );
     }
     
-    /**
-     * DTO for credential information in the response.
-     */
     public record CredentialDto(
             String id,
             String type,
@@ -56,12 +42,6 @@ public record VerificationResponse(
             String expiresAt,
             Map<String, Object> claims
     ) {
-        /**
-         * Creates a CredentialDto from a Credential domain object.
-         *
-         * @param credential the credential domain object
-         * @return CredentialDto
-         */
         public static CredentialDto from(Credential credential) {
             return new CredentialDto(
                 credential.id(),
@@ -78,9 +58,6 @@ public record VerificationResponse(
             );
         }
         
-        /**
-         * DTO for issuer information in the response.
-         */
         public record IssuerDto(
                 String id,
                 String displayName,

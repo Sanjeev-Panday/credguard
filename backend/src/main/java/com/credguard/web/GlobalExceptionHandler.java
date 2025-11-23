@@ -1,8 +1,11 @@
 package com.credguard.web;
 
-import com.credguard.application.ai.CredentialExtractionService;
+import com.credguard.exception.CredentialExtractionException;
+import com.credguard.exception.FileProcessingException;
+import com.credguard.exception.InvalidConfigurationException;
 import com.credguard.web.dto.VerificationResponse;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -11,46 +14,36 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Global exception handler for REST controllers.
- * <p>
- * This handler provides consistent error responses across all endpoints
- * and handles validation errors, extraction failures, and other exceptions.
+ * Global exception handler for consistent error responses.
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    /**
-     * Handles validation errors from @Valid annotations.
-     *
-     * @param ex the validation exception
-     * @return error response
-     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<VerificationResponse> handleValidationExceptions(
             MethodArgumentNotValidException ex
     ) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach((error) -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
-        });
+        logger.warn("Validation failed: {}", ex.getMessage());
+        
+        Map<String, String> errors = ex.getBindingResult().getAllErrors().stream()
+            .collect(Collectors.toMap(
+                error -> ((FieldError) error).getField(),
+                error -> error.getDefaultMessage()
+            ));
         
         List<String> errorMessages = errors.entrySet().stream()
             .map(entry -> entry.getKey() + ": " + entry.getValue())
-            .collect(Collectors.toList());
+            .toList();
         
         VerificationResponse response = new VerificationResponse(
-            false,
-            false,
-            false,
-            false,
+            false, false, false, false,
             errorMessages,
             List.of(),
             "Validation failed",
@@ -60,21 +53,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
-    /**
-     * Handles credential extraction failures.
-     *
-     * @param ex the extraction exception
-     * @return error response
-     */
-    @ExceptionHandler(CredentialExtractionService.CredentialExtractionException.class)
+    @ExceptionHandler(CredentialExtractionException.class)
     public ResponseEntity<VerificationResponse> handleExtractionException(
-            CredentialExtractionService.CredentialExtractionException ex
+            CredentialExtractionException ex
     ) {
+        logger.error("Credential extraction failed", ex);
+        
         VerificationResponse response = new VerificationResponse(
-            false,
-            false,
-            false,
-            false,
+            false, false, false, false,
             List.of("Credential extraction failed: " + ex.getMessage()),
             List.of(),
             "Failed to extract credential information from the provided file",
@@ -84,21 +70,48 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
-    /**
-     * Handles file upload size limit exceeded errors.
-     *
-     * @param ex the upload size exception
-     * @return error response
-     */
+    @ExceptionHandler(FileProcessingException.class)
+    public ResponseEntity<VerificationResponse> handleFileProcessingException(
+            FileProcessingException ex
+    ) {
+        logger.error("File processing failed", ex);
+        
+        VerificationResponse response = new VerificationResponse(
+            false, false, false, false,
+            List.of("File processing failed: " + ex.getMessage()),
+            List.of(),
+            "Failed to process the uploaded file",
+            null
+        );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(InvalidConfigurationException.class)
+    public ResponseEntity<VerificationResponse> handleInvalidConfigurationException(
+            InvalidConfigurationException ex
+    ) {
+        logger.error("Invalid configuration", ex);
+        
+        VerificationResponse response = new VerificationResponse(
+            false, false, false, false,
+            List.of("Configuration error: " + ex.getMessage()),
+            List.of(),
+            "Service configuration is invalid",
+            null
+        );
+        
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<VerificationResponse> handleMaxUploadSizeException(
             MaxUploadSizeExceededException ex
     ) {
+        logger.warn("File size exceeded: {}", ex.getMessage());
+        
         VerificationResponse response = new VerificationResponse(
-            false,
-            false,
-            false,
-            false,
+            false, false, false, false,
             List.of("File size exceeds maximum allowed size (10MB)"),
             List.of(),
             "File too large",
@@ -108,20 +121,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
-    /**
-     * Handles all other unexpected exceptions.
-     *
-     * @param ex the exception
-     * @return error response
-     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<VerificationResponse> handleGenericException(Exception ex) {
+        logger.error("Unexpected error occurred", ex);
+        
         VerificationResponse response = new VerificationResponse(
-            false,
-            false,
-            false,
-            false,
-            List.of("An unexpected error occurred: " + ex.getMessage()),
+            false, false, false, false,
+            List.of("An unexpected error occurred"),
             List.of(),
             "Internal server error",
             null
