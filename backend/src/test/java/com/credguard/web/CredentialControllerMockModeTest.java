@@ -1,5 +1,6 @@
 package com.credguard.web;
 
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -88,7 +89,7 @@ class CredentialControllerMockModeTest {
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.valid").value(false))
             .andExpect(jsonPath("$.errors").isArray())
-            .andExpect(jsonPath("$.errors[0]").value(org.hamcrest.Matchers.containsString("File is required and cannot be empty")));
+            .andExpect(jsonPath("$.errors[0]").value(Matchers.containsString("File is required and cannot be empty")));
     }
 
     @Test

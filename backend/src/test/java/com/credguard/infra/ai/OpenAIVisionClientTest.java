@@ -119,13 +119,20 @@ class OpenAIVisionClientTest {
         Credential credential1 = client.extractCredential(fileBytes, "test1.pdf");
         Credential credential2 = client.extractCredential(fileBytes, "test2.pdf");
 
-        // Then - should return credentials with same structure but different timestamps
-        assertEquals(credential1.id(), credential2.id());
-        assertEquals(credential1.type(), credential2.type());
-        assertEquals(credential1.issuer().id(), credential2.issuer().id());
-        assertEquals(credential1.subject(), credential2.subject());
-        // Note: timestamps may differ slightly, so we just check they exist
+        // Then - should return credentials with consistent structure
+        assertNotNull(credential1);
+        assertNotNull(credential2);
+        assertEquals("mock-credential-123", credential1.id());
+        assertEquals("mock-credential-123", credential2.id());
+        assertEquals("VerifiableCredential", credential1.type());
+        assertEquals("VerifiableCredential", credential2.type());
+        assertEquals("did:example:issuer", credential1.issuer().id());
+        assertEquals("did:example:issuer", credential2.issuer().id());
+        assertEquals("did:example:subject", credential1.subject());
+        assertEquals("did:example:subject", credential2.subject());
         assertNotNull(credential1.issuedAt());
         assertNotNull(credential2.issuedAt());
+        assertNotNull(credential1.expiresAt());
+        assertNotNull(credential2.expiresAt());
     }
 }

@@ -75,51 +75,31 @@ class CredentialExtractionServiceTest {
 
     @Test
     void extractCredential_NullFileName_NormalizesToUnknown() {
-        // Given
-        byte[] fileBytes = "test file content".getBytes();
-        Credential expectedCredential = createTestCredential();
-        
-        when(aiVisionClient.extractCredential(any(), eq("unknown")))
-            .thenReturn(expectedCredential);
-
-        // When
-        Credential result = service.extractCredential(fileBytes, null);
-
-        // Then
-        assertNotNull(result);
-        verify(aiVisionClient).extractCredential(fileBytes, "unknown");
+        // When & Then
+        testFileNameNormalization(null);
     }
 
     @Test
     void extractCredential_EmptyFileName_NormalizesToUnknown() {
-        // Given
-        byte[] fileBytes = "test file content".getBytes();
-        Credential expectedCredential = createTestCredential();
-        
-        when(aiVisionClient.extractCredential(any(), eq("unknown")))
-            .thenReturn(expectedCredential);
-
-        // When
-        Credential result = service.extractCredential(fileBytes, "");
-
-        // Then
-        assertNotNull(result);
-        verify(aiVisionClient).extractCredential(fileBytes, "unknown");
+        // When & Then
+        testFileNameNormalization("");
     }
 
     @Test
     void extractCredential_BlankFileName_NormalizesToUnknown() {
-        // Given
+        // When & Then
+        testFileNameNormalization("   ");
+    }
+    
+    private void testFileNameNormalization(String fileName) {
         byte[] fileBytes = "test file content".getBytes();
         Credential expectedCredential = createTestCredential();
         
         when(aiVisionClient.extractCredential(any(), eq("unknown")))
             .thenReturn(expectedCredential);
 
-        // When
-        Credential result = service.extractCredential(fileBytes, "   ");
+        Credential result = service.extractCredential(fileBytes, fileName);
 
-        // Then
         assertNotNull(result);
         verify(aiVisionClient).extractCredential(fileBytes, "unknown");
     }
