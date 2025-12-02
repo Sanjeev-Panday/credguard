@@ -27,11 +27,16 @@
 
 <div align="center">
 
-![CredGuard Verification UI](https://github.com/user-attachments/assets/6bf32515-61bf-470f-bfcd-035eea65f79a)
-
-*CredGuard's intuitive verification interface showing credential validation with detailed results*
-
+<img width="1391" height="718" alt="image" src="https://github.com/user-attachments/assets/61ad6b83-7432-47ea-9ff4-bd714c516919" />
+<h4>CredGuard's intuitive verification interface showing credential validation with detailed results</h4>
 </div>
+<div align="center">
+<img width="1250" height="611" alt="image" src="https://github.com/user-attachments/assets/9605976b-daaa-4c97-b4b5-1ce57ba1b950" />
+  <h4>CredGuard's issuance interface showing credential issuance process</h4>
+</div>
+
+
+
 
 ---
 
