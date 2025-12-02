@@ -1,8 +1,10 @@
 package com.credguard.web;
 
 import com.credguard.exception.CredentialExtractionException;
+import com.credguard.exception.CredentialIssuanceException;
 import com.credguard.exception.FileProcessingException;
 import com.credguard.exception.InvalidConfigurationException;
+import com.credguard.web.dto.CredentialIssuanceResponse;
 import com.credguard.web.dto.VerificationResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,6 +101,19 @@ public class GlobalExceptionHandler {
             List.of(),
             "Service configuration is invalid",
             null
+        );
+        
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
+    @ExceptionHandler(CredentialIssuanceException.class)
+    public ResponseEntity<CredentialIssuanceResponse> handleCredentialIssuanceException(
+            CredentialIssuanceException ex
+    ) {
+        logger.error("Credential issuance failed", ex);
+        
+        CredentialIssuanceResponse response = CredentialIssuanceResponse.failure(
+            "Credential issuance failed: " + ex.getMessage()
         );
         
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
