@@ -33,7 +33,7 @@ public class SignatureVerificationService {
         try {
             SignedJWT signedJWT = SignedJWT.parse(jwtString);
             JWSHeader header = signedJWT.getHeader();
-            
+
             if (header.getAlgorithm() == null) {
                 logger.debug("JWT has no algorithm specified, skipping signature verification");
                 return true;
@@ -60,7 +60,7 @@ public class SignatureVerificationService {
         try {
             JWKSet jwkSet = JWKSet.load(URI.create(jwkSetUrl).toURL());
             JWSHeader header = signedJWT.getHeader();
-            
+
             JWK jwk = jwkSet.getKeyByKeyId(header.getKeyID());
             if (jwk == null && jwkSet.getKeys().size() == 1) {
                 jwk = jwkSet.getKeys().iterator().next();
@@ -71,14 +71,14 @@ public class SignatureVerificationService {
                 return false;
             }
 
-            if (!(jwk instanceof RSAKey)) {
+            // Java 21: Pattern matching for instanceof - combines type check and cast
+            if (!(jwk instanceof RSAKey rsaKey)) {
                 logger.error("Only RSA keys are currently supported");
                 return false;
             }
 
-            RSAKey rsaKey = (RSAKey) jwk;
             JWSVerifier verifier = new RSASSAVerifier(rsaKey);
-            
+
             boolean verified = signedJWT.verify(verifier);
             logger.debug("JWT signature verification result: {}", verified);
             return verified;
@@ -96,9 +96,9 @@ public class SignatureVerificationService {
                 return false;
             }
 
-            return signedJWT.getHeader() != null && 
-                   signedJWT.getSignature() != null &&
-                   claims.getIssuer() != null;
+            return signedJWT.getHeader() != null &&
+                    signedJWT.getSignature() != null &&
+                    claims.getIssuer() != null;
 
         } catch (ParseException e) {
             logger.error("Failed to parse JWT claims: {}", e.getMessage());
@@ -108,15 +108,14 @@ public class SignatureVerificationService {
 
     public boolean verifyCredentialSignature(
             Map<String, Object> credentialClaims,
-            String issuerPublicKeyUrl
-    ) {
+            String issuerPublicKeyUrl) {
         Object jwtObject = credentialClaims.get("jwt");
-        if (jwtObject instanceof String) {
-            return verifySignature((String) jwtObject, issuerPublicKeyUrl);
+        // Java 21: Pattern matching for instanceof - more concise and readable
+        if (jwtObject instanceof String jwt) {
+            return verifySignature(jwt, issuerPublicKeyUrl);
         }
 
         logger.debug("No JWT found in credential claims, skipping signature verification");
         return true;
     }
 }
-

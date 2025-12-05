@@ -12,11 +12,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Service for verifying digital credentials using configurable validation strategies.
+ * Service for verifying digital credentials using configurable validation
+ * strategies.
  */
 @Service
 public class VerificationService {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(VerificationService.class);
     private final List<CredentialValidator> validators;
 
@@ -27,22 +28,24 @@ public class VerificationService {
 
     public VerificationResult verify(Credential credential) {
         logger.info("Starting verification for credential: {}", credential.id());
-        
+
         List<String> errors = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
-        
+
         boolean issuerTrusted = true;
         boolean notExpired = true;
         boolean signatureValid = true;
-        
+
         for (CredentialValidator validator : validators) {
             ValidationResult result = validator.validate(credential);
-            
+
             if (!result.valid()) {
                 errors.add(result.errorMessage());
-                logger.debug("Validator {} failed for credential {}", 
-                    validator.getValidatorName(), credential.id());
-                
+                logger.debug("Validator {} failed for credential {}",
+                        validator.getValidatorName(), credential.id());
+
+                // Java 21: Switch expression with arrow syntax (already using it, but ensure
+                // consistency)
                 switch (result.validationType()) {
                     case ISSUER_TRUST -> issuerTrusted = false;
                     case EXPIRY -> notExpired = false;
@@ -50,46 +53,41 @@ public class VerificationService {
                 }
             }
         }
-        
+
         boolean valid = errors.isEmpty();
         String explanation = buildExplanation(credential, valid, errors);
-        
-        logger.info("Verification completed for credential {}: valid={}, errors={}", 
-            credential.id(), valid, errors.size());
-        
+
+        logger.info("Verification completed for credential {}: valid={}, errors={}",
+                credential.id(), valid, errors.size());
+
         if (valid) {
             return VerificationResult.success(
-                credential,
-                issuerTrusted,
-                signatureValid,
-                notExpired,
-                warnings,
-                explanation
-            );
+                    credential,
+                    issuerTrusted,
+                    signatureValid,
+                    notExpired,
+                    warnings,
+                    explanation);
         } else {
             return VerificationResult.failure(
-                credential,
-                errors,
-                warnings,
-                explanation
-            );
+                    credential,
+                    errors,
+                    warnings,
+                    explanation);
         }
     }
-    
+
     private String buildExplanation(Credential credential, boolean valid, List<String> errors) {
         if (valid) {
             return String.format(
-                "Credential '%s' issued by '%s' is valid. All checks passed.",
-                credential.id(),
-                credential.issuer().displayName()
-            );
+                    "Credential '%s' issued by '%s' is valid. All checks passed.",
+                    credential.id(),
+                    credential.issuer().displayName());
         } else {
             return String.format(
-                "Credential '%s' verification failed. Issues: %s",
-                credential.id(),
-                String.join("; ", errors)
-            );
+                    "Credential '%s' verification failed. Issues: %s",
+                    credential.id(),
+                    String.join("; ", errors));
         }
     }
 }
-
